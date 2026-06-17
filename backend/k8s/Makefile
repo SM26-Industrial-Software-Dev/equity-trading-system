@@ -34,3 +34,32 @@ run:
 # Run kubectl commands
 kubectl:
 	@docker exec -it k8s-toolbox kubectl $(CMD)
+
+status:
+	@echo "--- CLUSTER STATUS (WIDE) ---"
+	@docker exec -it k8s-toolbox kubectl get pods -A -o wide
+
+# Checks the health of the nodes
+nodes:
+	@echo "--- NODE HEALTH ---"
+	@docker exec -it k8s-toolbox kubectl get nodes -o wide
+
+# Describes a specific app in the backend namespace (Usage: make describe APP=booklib-api)
+describe:
+	@docker exec -it k8s-toolbox kubectl describe deployment $(APP) -n backend
+
+# Fetches logs for a specific app (Usage: make logs APP=booklib)
+logs:
+	@docker exec -it k8s-toolbox kubectl logs -l app=$(APP) -n backend --tail=50
+
+# Checks the Traefik Ingress routing rules
+routes:
+	@echo "--- ACTIVE INGRESS ROUTES ---"
+	@docker exec -it k8s-toolbox kubectl get ingress -A
+
+# Fetches the auto-generated Grafana admin password
+grafana-pass:
+	@echo "Grafana Username: admin"
+	@echo -n "Grafana Password: "
+	@docker exec -it k8s-toolbox kubectl get secret --namespace monitoring loki-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
+	@echo ""

@@ -16,6 +16,7 @@ options:
   kubeconfig:
     updateDefaultKubeconfig: true
     switchCurrentContext: true
+
 files:
   - description: "1. Create Namespaces"
     source: ./manifests/00-namespaces.yaml
@@ -26,5 +27,11 @@ files:
   - description: "2. Deploy Backend App"
     source: ./manifests/01-booklib.yaml
     destination: /var/lib/rancher/k3s/server/manifests/01-booklib.yaml
+    nodeFilters:
+      - "server:*"
+
+  - description: "3. Deploy Monitoring (Loki/Grafana)"
+    source: ./manifests/02-monitoring.yaml
+    destination: /var/lib/rancher/k3s/server/manifests/02-monitoring.yaml
     nodeFilters:
       - "server:*"
