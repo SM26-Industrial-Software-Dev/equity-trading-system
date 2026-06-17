@@ -21,7 +21,11 @@ spec:
   set:
     grafana.enabled: "true"
     promtail.enabled: "true"
-    loki.persistence.enabled: "false" # Keep logs in RAM for local dev to save disk space
+    loki.persistence.enabled: "false"
+    grafana.sidecar.dashboards.enabled: "true"
+    grafana.sidecar.dashboards.label: "grafana_dashboard"
+    prometheus.enabled: "true"
+    grafana.grafana\.ini.dashboards.default_home_dashboard_path: "/tmp/dashboards/fastapi-developer-dashboard/dashboard.json"
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -40,3 +44,21 @@ spec:
                 name: loki-stack-grafana
                 port:
                   number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loki-ingress
+  namespace: monitoring
+spec:
+  rules:
+    - host: loki.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: loki-stack
+                port:
+                  number: 3100

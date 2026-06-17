@@ -63,3 +63,15 @@ grafana-pass:
 	@echo -n "Grafana Password: "
 	@docker exec -it k8s-toolbox kubectl get secret --namespace monitoring loki-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
 	@echo ""
+
+watch:
+	@docker exec -it k8s-toolbox kubectl get pods -n backend -w
+
+# Updates the dashboard instantly without rebuilding the cluster
+dash:
+	@echo "Hot-reloading Grafana Dashboard..."
+	@docker exec -i k8s-toolbox kubectl delete configmap fastapi-developer-dashboard -n monitoring --ignore-not-found
+	@docker exec -i k8s-toolbox kubectl create configmap fastapi-developer-dashboard \
+		--namespace monitoring \
+		--from-file=fastapi-logs.json=backend/k8s/manifests/dashboard.json
+	@echo "Dashboard applied! (Grafana may take ~10 seconds to detect the change)"

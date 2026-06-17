@@ -35,3 +35,9 @@ files:
     destination: /var/lib/rancher/k3s/server/manifests/02-monitoring.yaml
     nodeFilters:
       - "server:*"
+
+  - description: "4. Deploy Grafana Dashboards"
+    source: ./manifests/03-dashboards.yaml
+    destination: /var/lib/rancher/k3s/server/manifests/03-dashboards.yaml
+    nodeFilters:
+      - "server:*"
