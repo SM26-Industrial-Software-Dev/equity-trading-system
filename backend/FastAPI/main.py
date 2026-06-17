@@ -137,6 +137,7 @@ def verify_cookie(session: str = Cookie(None)):
 @app.post("/users/account")
 def create_account(can_short: bool, username: str = Depends(verify_cookie)):
 
+    # Create account
     account_UUID = str(uuid.uuid4())
     positions = []
     now = datetime.now(timezone.utc).isoformat()
@@ -149,6 +150,7 @@ def create_account(can_short: bool, username: str = Depends(verify_cookie)):
 
     redis_client.hset(redis_dictionaries[1], account_UUID, json.dumps(account_data))
 
+    # Grab User to add Account to them
     raw_user = redis_client.hget(redis_dictionaries[0], username)
     user_data = json.loads(raw_user)
 
@@ -167,6 +169,7 @@ def add_account(account_id: str, username: str = Depends(verify_cookie)):
     if not raw_account:
         raise HTTPException(status_code=404, detail="This account does not exist")
 
+    # Grab User to add account to them
     raw_user = redis_client.hget(redis_dictionaries[0], username)
     user_data = json.loads(raw_user)
 
@@ -195,8 +198,12 @@ def get_users_positions(username: str = Depends(verify_cookie)):
 
     for x in raw_positions.values():
         x_positions = json.loads(x)
-        if x_positions["Account_id"] in user_data["accounts"]:
-            if x_positions["Account_id"] not in positions:
+        if (
+            x_positions["Account_id"] in user_data["accounts"]
+        ):  # This positions is your account
+            if (
+                x_positions["Account_id"] not in positions
+            ):  # First time adding a position for that account
                 positions[x_positions["Account_id"]] = [
                     {
                         "Ticker": x_positions["Ticker"],
@@ -205,7 +212,7 @@ def get_users_positions(username: str = Depends(verify_cookie)):
                         "Update_at": x_positions["Updated_at"],
                     }
                 ]
-            else:
+            else:  # This account already processed at least one position
                 positions[x_positions["Account_id"]].append(
                     {
                         "Ticker": x_positions["Ticker"],
@@ -224,6 +231,7 @@ def get_accounts_positions(account_id: str, username: str = Depends(verify_cooki
     raw_user = redis_client.hget(redis_dictionaries[0], username)
     user_data = json.loads(raw_user)
 
+    # Confirm it's your account
     if account_id not in user_data["accounts"]:
         raise HTTPException(
             status_code=401, detail="You do not have access to this account"
@@ -235,7 +243,7 @@ def get_accounts_positions(account_id: str, username: str = Depends(verify_cooki
 
     for x in raw_positions.values():
         x_positions = json.loads(x)
-        if x_positions["Account_id"] == account_id:
+        if x_positions["Account_id"] == account_id:  # If this position is your account
             positions[x_positions["Ticker"]] = {
                 "Quantity": x_positions["Quantity"],
                 "Created_at": x_positions["Created_at"],
@@ -248,6 +256,7 @@ def get_accounts_positions(account_id: str, username: str = Depends(verify_cooki
 @app.get("/positions/ticker/{ticker}")
 def get_users_positions_for_ticker(ticker: str, username: str = Depends(verify_cookie)):
 
+    # Confirm it's a real ticker
     raw_ticker = redis_client.hget(redis_dictionaries[2], ticker)
     if not raw_ticker:
         raise HTTPException(status_code=404, detail="This ticker does not exist")
@@ -264,25 +273,15 @@ def get_users_positions_for_ticker(ticker: str, username: str = Depends(verify_c
         if (
             x_positions["Account_id"] in user_data["accounts"]
             and x_positions["Ticker"] == ticker
-        ):
-            if x_positions["Account_id"] not in positions:
-                positions[x_positions["Account_id"]] = [
-                    {
-                        "Ticker": x_positions["Ticker"],
-                        "Quantity": x_positions["Quantity"],
-                        "Created_at": x_positions["Created_at"],
-                        "Update_at": x_positions["Updated_at"],
-                    }
-                ]
-            else:
-                positions[x_positions["Account_id"]].append(
-                    {
-                        "Ticker": x_positions["Ticker"],
-                        "Quantity": x_positions["Quantity"],
-                        "Created_at": x_positions["Created_at"],
-                        "Update_at": x_positions["Updated_at"],
-                    }
-                )
+        ):  # You own this account and it's the right ticker
+            positions[x_positions["Account_id"]] = [
+                {
+                    "Ticker": x_positions["Ticker"],
+                    "Quantity": x_positions["Quantity"],
+                    "Created_at": x_positions["Created_at"],
+                    "Update_at": x_positions["Updated_at"],
+                }
+            ]
 
     return {"message": positions}
 
@@ -292,6 +291,7 @@ def get_accounts_positions_for_ticker(
     ticker: str, account_id: str, username: str = Depends(verify_cookie)
 ):
 
+    # Check ticker exists
     raw_ticker = redis_client.hget(redis_dictionaries[2], ticker)
     if not raw_ticker:
         raise HTTPException(status_code=404, detail="This ticker does not exist")
@@ -299,6 +299,7 @@ def get_accounts_positions_for_ticker(
     raw_user = redis_client.hget(redis_dictionaries[0], username)
     user_data = json.loads(raw_user)
 
+    # Confirm you have access to this account
     if account_id not in user_data["accounts"]:
         raise HTTPException(
             status_code=401, detail="You do not have access to this account"
@@ -310,8 +311,11 @@ def get_accounts_positions_for_ticker(
 
     for x in raw_positions.values():
         x_positions = json.loads(x)
-        if x_positions["Account_id"] == account_id and x_positions["Ticker"] == ticker:
+        if (
+            x_positions["Account_id"] == account_id and x_positions["Ticker"] == ticker
+        ):  # Correct account and ticker
             positions[x_positions["Ticker"]] = x_positions["Quantity"]
+            break  # only one account and one ticker
 
     return {"message": positions}
 
