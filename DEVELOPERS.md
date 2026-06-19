@@ -11,16 +11,13 @@ To spin up the logging and metrics environment, run the bootstrapper script from
 **Mac/Linux:**
 `./run_logging.sh`
 
-**Windows (PowerShell):**
-`.\run_logging.ps1`
-
 > ⚠️ **IMPORTANT: BE PATIENT!** > Kubernetes takes about **1 to 2 minutes** to fully pull the images, initialize the Loki database, and start the Grafana web server. If the page doesn't load immediately, grab a coffee and refresh in a minute!
 
 ## 📊 2. Accessing Grafana
 
 Once the cluster is up, Grafana is accessible via your browser. Because of how our local load balancer is configured, you must specify **port 8080**.
 
-* **URL:** <http://grafana.localhost:8080> *(or <http://localhost:8080>)*
+* **URL:** <http://grafana.localhost:8080>
 * **Username:** `admin`
 * **Password:** `Rust!`
 
