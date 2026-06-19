@@ -258,6 +258,14 @@ async def add_account(account_id: str, user_id: str = Depends(verify_cookie)):
     return {"message": f"Account added to user {user_data['username']}"}
 
 
+@app.get("/users/allaccounts")
+async def get_all_accounts(user_id: str = Depends(verify_cookie)):
+
+    raw_user = await redis_client.hget(redis_dictionaries[0], user_id)
+    user_data = json.loads(raw_user)
+
+    return {"message": user_data["accounts"]}
+
 # endregion
 
 
