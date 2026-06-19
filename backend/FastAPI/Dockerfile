@@ -17,9 +17,12 @@ RUN adduser \
     --uid 5678 \
     --disabled-password \
     --gecos "" \
-    appuser \
-    && chown -R appuser /app
+    appuser
+
+RUN chown -R appuser:appuser /app
 
 USER appuser
 
-CMD ["uv", "run", "main.py"]
+ENV PATH="/app/.venv/bin:$PATH"
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
