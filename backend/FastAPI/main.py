@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     await app.state.pg_pool.close()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI() #TODO lifespan=lifespan
 # Initalize Data
 # region
 
