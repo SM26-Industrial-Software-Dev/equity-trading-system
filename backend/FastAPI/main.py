@@ -10,11 +10,18 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from prometheus_fastapi_instrumentator import Instrumentator
+
 
 app = FastAPI()
 # Initalize Data
 # region
 
+
+Instrumentator().instrument(app).expose(
+    app,
+    endpoint="/metrics"
+)
 
 redis_port_number = (
     6379  # Default Redis port TODO update this port once agreed upon port
