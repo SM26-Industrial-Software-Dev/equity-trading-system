@@ -125,7 +125,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum(rate(http_requests_total{service=\"fastapi-service\", status=~\"[45].*\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{service=\"fastapi-service\", status_code=~\"[45]..\"}[1m]))",
           "refId": "A"
         }
       ]
