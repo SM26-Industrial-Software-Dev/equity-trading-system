@@ -278,7 +278,7 @@
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "Loki" },
-              "expr": "{app=\"Postgres\"}",
+              "expr": "{app=\"postgres\"}",
               "refId": "A"
             }
           ]
@@ -296,7 +296,7 @@
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "Loki" },
-              "expr": "{app=\"Redis\"}",
+              "expr": "{app=\"redis\"}",
               "refId": "A"
             }
           ]
@@ -323,7 +323,7 @@
           "targets": [
             {
               "datasource": { "type": "loki", "uid": "Loki" },
-              "expr": "{app=\"Streamlit\"}",
+              "expr": "{app=\"streamlit\"}",
               "refId": "A"
             }
           ]
@@ -337,33 +337,6 @@
             "showTime": true,
             "sortOrder": "Ascending",
             "enableLogDetails": true
-          },
-          "targets": [
-            {
-              "datasource": { "type": "loki", "uid": "Loki" },
-              "expr": "{app=\"FastAPI\"}",
-              "refId": "A"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 103,
-      "type": "row",
-      "title": "Aggregated Backend Logs",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
-      "collapsed": true,
-      "panels": [
-        {
-          "id": 6,
-          "title": "FastAPI Live Logs",
-          "type": "logs",
-          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 48 },
-          "datasource": { "type": "loki", "uid": "Loki" },
-          "options": {
-            "showTime": true,
-            "sortOrder": "Ascending"
           },
           "targets": [
             {

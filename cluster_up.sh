@@ -97,27 +97,21 @@ $ENGINE exec -e HOST_ROOT="$PROJECT_ROOT" -i k8s-toolbox k3d cluster create --co
 
 echo "🔄 Updating Source to: $REPO_NAME"
 
-# 1. Apply the target (which creates or updates the GitRepository)
+# 1. Apply the target (which now creates BOTH the GitRepository AND the Kustomization)
 $ENGINE exec -i k8s-toolbox kubectl apply -f "backend/k8s/flux-system/targets/$TARGET_FILE"
 
-# 2. Patch the Kustomization to point to the new GitRepository name
-# This changes the 'sourceRef' on the fly without editing files
-$ENGINE exec -i k8s-toolbox kubectl patch kustomization dev-stack \
-    -n flux-system \
-    --type=merge \
-    -p "{\"spec\": {\"sourceRef\": {\"name\": \"$REPO_NAME\"}}}"
-
-# 3. Force Reconciliation
+# 2. Force Reconciliation
 echo "⚡ Forcing Sync..."
 $ENGINE exec -i k8s-toolbox flux reconcile source git "$REPO_NAME"
 $ENGINE exec -i k8s-toolbox flux reconcile kustomization dev-stack --with-source
 
-echo "✅ Environment synced to $REPO_NAME"
+echo "✅ Environment synced to $REPO_NAME via $TARGET_FILE overlay"
 
 echo ""
 echo "=========================================================="
 echo "✅ FULL TRADING ENVIRONMENT DEPLOYED"
 echo "🌐 API URL:     http://localhost:8080 (or api.localhost)"
+echo "🌐 Streamlit URL:     http://streamlit.localhost:8080 (or api.localhost)"
 echo "🐛 Locust URL:  http://locust.localhost:8080"
 echo "📊 Grafana:     http://grafana.localhost:8080"
 echo "👤 Username:    admin"
