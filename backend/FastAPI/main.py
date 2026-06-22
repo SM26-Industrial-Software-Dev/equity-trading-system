@@ -395,7 +395,7 @@ async def get_users_positions(user_id: str = Depends(verify_cookie)):
     positions = {}
 
     # Grab all positions for checking
-    raw_positions = await redis_client.hgetall(redis_dictionaries[3])
+    raw_positions = await redis_client.hgetall(redis_dictionaries[2])
 
     for x in raw_positions.values():
         x_positions = json.loads(x)
@@ -446,7 +446,7 @@ async def get_accounts_positions(
     positions = {}
 
     # Grab all positions for checking
-    raw_positions = await redis_client.hgetall(redis_dictionaries[3])
+    raw_positions = await redis_client.hgetall(redis_dictionaries[2])
 
     for x in raw_positions.values():
         x_positions = json.loads(x)
@@ -473,7 +473,7 @@ async def get_users_positions_for_ticker(
     positions = {}
 
     # Grab all positions for checking
-    raw_positions = await redis_client.hgetall(redis_dictionaries[3])
+    raw_positions = await redis_client.hgetall(redis_dictionaries[2])
 
     for x in raw_positions.values():
         x_positions = json.loads(x)
@@ -512,7 +512,7 @@ async def get_accounts_positions_for_ticker(
     positions = {}
 
     # Grab all positions for checking
-    raw_positions = await redis_client.hgetall(redis_dictionaries[3])
+    raw_positions = await redis_client.hgetall(redis_dictionaries[2])
 
     for x in raw_positions.values():
         x_positions = json.loads(x)
@@ -608,7 +608,7 @@ async def individual_trade(user_id: str, trade: dict):
         raise HTTPException(status_code=422, detail="Not a valid quantity value")
 
     # Grab all positions for editing
-    raw_positions = await redis_client.hgetall(redis_dictionaries[3])
+    raw_positions = await redis_client.hgetall(redis_dictionaries[2])
     position_key = None
     new_position = None
 
@@ -681,13 +681,13 @@ async def individual_trade(user_id: str, trade: dict):
             "updated_at": now,
         }
         await redis_client.hset(  # Set the new position
-            redis_dictionaries[3], position_key, json.dumps(position_data)
+            redis_dictionaries[2], position_key, json.dumps(position_data)
         )
         logger.info("Created new position for account")
     else:  # Editing existing position
         # Grab the existing positions data
         raw_specific_position = await redis_client.hget(
-            redis_dictionaries[3], position_key
+            redis_dictionaries[2], position_key
         )
         specific_position = json.loads(raw_specific_position)
 
@@ -695,7 +695,7 @@ async def individual_trade(user_id: str, trade: dict):
         specific_position["quantity"] = new_position
         specific_position["updated_at"] = now
         await redis_client.hset(
-            redis_dictionaries[3], position_key, json.dumps(specific_position)
+            redis_dictionaries[2], position_key, json.dumps(specific_position)
         )
         logger.info("Updated existing position for account")
 
