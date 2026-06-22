@@ -16,6 +16,8 @@ from contextlib import asynccontextmanager
 from prometheus_fastapi_instrumentator import Instrumentator
 
 valid_tickers = set()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global valid_tickers
@@ -480,10 +482,7 @@ async def individual_trade(user_id: str, trade: dict):
 
     # Check ticker exists
     if trade["ticker"] not in valid_tickers:
-        raise HTTPException(
-            status_code=422,
-            detail="Ticker does not exist"
-        )
+        raise HTTPException(status_code=422, detail="Ticker does not exist")
 
     # Ensure calid direction
     if trade["direction"] not in ("Buy", "Sell"):
@@ -643,10 +642,6 @@ async def get_all_user_trades_for_ticker(
     ticker: str, request: Request, user_id: str = Depends(verify_cookie)
 ):
 
-    raw_ticker = await redis_client.hget(redis_dictionaries[2], ticker)
-    if not raw_ticker:
-        raise HTTPException(status_code=404, detail="This ticker does not exist")
-
     rows = await request.app.state.pg_pool.fetch(
         """
         SELECT *
@@ -677,10 +672,6 @@ async def get_all_user_trades_for_account_for_ticker(
         raise HTTPException(
             status_code=401, detail="You do not have access to this account"
         )
-
-    raw_ticker = await redis_client.hget(redis_dictionaries[2], ticker)
-    if not raw_ticker:
-        raise HTTPException(status_code=404, detail="This ticker does not exist")
 
     rows = await request.app.state.pg_pool.fetch(
         """
@@ -787,10 +778,6 @@ async def get_all_user_trades_for_ticker_for_time(
     user_id: str = Depends(verify_cookie),
 ):
 
-    raw_ticker = await redis_client.hget(redis_dictionaries[2], ticker)
-    if not raw_ticker:
-        raise HTTPException(status_code=404, detail="This ticker does not exist")
-
     rows = await request.app.state.pg_pool.fetch(
         """
         SELECT *
@@ -826,10 +813,6 @@ async def get_all_user_trades_for_account_for_ticker_for_time(
         raise HTTPException(
             status_code=401, detail="You do not have access to this account"
         )
-
-    raw_ticker = await redis_client.hget(redis_dictionaries[2], ticker)
-    if not raw_ticker:
-        raise HTTPException(status_code=404, detail="This ticker does not exist")
 
     rows = await request.app.state.pg_pool.fetch(
         """
