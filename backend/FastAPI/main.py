@@ -560,7 +560,7 @@ async def create_trade(trade: list[Trade], user_id: str = Depends(verify_cookie)
             await individual_trade(user_id, trade_item.model_dump())
         )  # Converts from class to dictionary for sorting
 
-    return {"message": "trade_return"}
+    return {"message": trade_return}
 
 
 async def individual_trade(user_id: str, trade: dict):
@@ -651,15 +651,16 @@ async def individual_trade(user_id: str, trade: dict):
         trade["other_account"] = None
 
     trade_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc).timestamp()
+    now_int = int(now)
     payload = {
         "trade_id": trade_id,
         "account_id": trade["account_id"],
         "user_id": user_id,
         "direction": trade["direction"],  # Must be exact string: 'Buy' or 'Sell'
         "symbol_ticker": trade["ticker"],
-        "created_at": now,
-        "updated_at": now,
+        "created_at": now_int,
+        "updated_at": now_int,
         "quantity": int(trade["quantity"]),
         "price": str(trade["price"]),  # Kept as string for Postgres NUMERIC ingestion
         "other_account": trade["other_account"],  # Can be None/Null
