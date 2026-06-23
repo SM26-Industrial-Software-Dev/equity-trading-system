@@ -20,6 +20,7 @@ def apply_theme():
 
             /* Light-mode defaults */
             --eq-app-bg: var(--eq-blue-50);
+            --eq-body-text: #1a1a1a;
             --eq-header-color: var(--eq-blue-700);
             --eq-card-bg: #ffffff;
             --eq-card-border: var(--eq-blue-200);
@@ -35,6 +36,7 @@ def apply_theme():
            of hard-coding colors that only work in one mode. */
         [data-theme="dark"] {
             --eq-app-bg: #0e1117;
+            --eq-body-text: #f0f2f6;
             --eq-header-color: var(--eq-blue-400);
             --eq-card-bg: #1c2128;
             --eq-card-border: var(--eq-blue-500);
@@ -46,6 +48,16 @@ def apply_theme():
 
         .stApp {
             background-color: var(--eq-app-bg);
+            color: var(--eq-body-text);
+        }
+
+        /* Catch-all for plain text in the main content area -- headers,
+           captions, labels, table/json output that aren't inside a card.
+           Without this, dark mode can leave some text using a color left
+           over from light-mode defaults, rendering low-contrast against
+           our custom backgrounds. */
+        .main, .main p, .main span, .main label, .main div {
+            color: var(--eq-body-text);
         }
 
         /* Sidebar */

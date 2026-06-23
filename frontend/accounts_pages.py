@@ -1,6 +1,7 @@
 import streamlit as st
 
 from api_client import create_account, get_user_accounts, update_user_account
+from account_picker import account_select
 
 
 @st.fragment(run_every="15s")
@@ -61,13 +62,16 @@ def render_update_account_page():
     st.caption("PUT /users/accounts/{account_id}")
     st.caption("This endpoint doesn't exist in the backend yet -- showing mock data.")
 
-    account_id = st.text_input("Account ID")
+    account_id = account_select()
     can_short = st.checkbox("Can Short")
 
     if st.button("Update Account"):
-        data = {
-            "username": st.session_state.username,
-            "can_short": can_short,
-        }
-        result = update_user_account(account_id, data)
-        st.json(result)
+        if not account_id:
+            st.error("Select an account first.")
+        else:
+            data = {
+                "username": st.session_state.username,
+                "can_short": can_short,
+            }
+            result = update_user_account(account_id, data)
+            st.json(result)

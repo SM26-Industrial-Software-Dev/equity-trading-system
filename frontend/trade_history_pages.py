@@ -8,6 +8,7 @@ from api_client import (
     get_trade_by_id,
     update_trade,
 )
+from account_picker import account_select
 
 
 def _render_trades_table(result):
@@ -42,16 +43,11 @@ def render_trades_by_account_page():
     st.header("📜 Trade History by Account")
     st.caption("GET /trades/account/{account_id}")
 
-    account_id = st.text_input("Account ID")
+    account_id = account_select()
 
-    if st.button("Load Trades"):
-        st.session_state.trades_by_account_query = account_id
-
-    query = st.session_state.get("trades_by_account_query")
-    if query:
-        # Once a search has run, this fragment keeps polling on its own --
-        # no need to click "Load Trades" again to see new trades.
-        _trades_by_account_fragment(query)
+    # Auto-loads (and keeps polling) as soon as an account is selected.
+    if account_id:
+        _trades_by_account_fragment(account_id)
 
 
 @st.fragment(run_every="15s")
@@ -82,15 +78,11 @@ def render_trades_by_account_and_ticker_page():
     st.header("📜 Trade History by Account & Ticker")
     st.caption("GET /trades/account/{account_id}/ticker.{ticker}")
 
-    account_id = st.text_input("Account ID")
+    account_id = account_select(key="trades_acct_ticker_select")
     ticker = st.text_input("Ticker", "AAPL")
 
-    if st.button("Load Trades"):
-        st.session_state.trades_by_acct_ticker_query = (account_id, ticker.upper())
-
-    query = st.session_state.get("trades_by_acct_ticker_query")
-    if query:
-        _trades_by_account_and_ticker_fragment(*query)
+    if account_id and ticker:
+        _trades_by_account_and_ticker_fragment(account_id, ticker.upper())
 
 
 @st.fragment(run_every="15s")

@@ -17,7 +17,22 @@ def _get_session():
 
 def _api_error(response):
     """Pulls a clean error message out of a failed response, falling back to
-    raw text if the body isn't JSON (e.g. a 500 with no detail field)."""
+    raw text if the body isn't JSON (e.g. a 500 with no detail field).
+
+    Also guards against a specific edge case: if the browser remembered a
+    username via localStorage (see persistent_login.py) but the actual
+    backend session cookie didn't survive the reload, the UI would think
+    it's logged in while every real API call 401s. Rather than show that
+    confusingly on every page, treat a 401 here as "the remembered login
+    wasn't actually valid" and bounce back to a clean login screen."""
+    if response.status_code == 401 and st.session_state.get("username"):
+        from persistent_login import forget_login
+        st.session_state.username = None
+        st.session_state.pop("http", None)
+        forget_login()
+        st.warning("Your session expired. Please log in again.")
+        st.rerun()
+
     try:
         return response.json().get("detail", response.text)
     except Exception:

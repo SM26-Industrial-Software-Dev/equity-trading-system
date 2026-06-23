@@ -6,6 +6,7 @@ from api_client import (
     get_positions_by_ticker,
     get_positions_by_account_and_ticker,
 )
+from account_picker import account_select
 
 
 def _render_positions_result(result, empty_message="No positions found."):
@@ -42,10 +43,10 @@ def render_positions_by_account_page():
     st.header("📊 Positions by Account")
     st.caption("GET /positions/accounts/{account_id}")
 
-    prefilled = st.session_state.pop("jump_to_account", "")
-    account_id = st.text_input("Account ID", value=prefilled)
+    prefilled = st.session_state.pop("jump_to_account", None)
+    account_id = account_select(preselect_account_id=prefilled)
 
-    # Auto-loads (and keeps polling) as soon as there's an account ID --
+    # Auto-loads (and keeps polling) as soon as an account is selected --
     # including immediately after jumping here from My Accounts.
     if account_id:
         _positions_by_account_fragment(account_id)
@@ -75,7 +76,7 @@ def render_positions_by_account_and_ticker_page():
     st.header("📊 Positions by Account & Ticker")
     st.caption("GET /positions/accounts/{account_id}/ticker/{ticker}")
 
-    account_id = st.text_input("Account ID")
+    account_id = account_select(key="pos_acct_ticker_select")
     ticker = st.text_input("Ticker", "AAPL")
 
     if account_id and ticker:
