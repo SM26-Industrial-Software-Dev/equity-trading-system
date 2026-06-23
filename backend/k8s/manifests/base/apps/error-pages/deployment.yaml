@@ -3,7 +3,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: error-page
-  namespace: frontend
   labels:
     app: error-page
 spec:
