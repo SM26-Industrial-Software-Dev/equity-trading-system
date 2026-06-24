@@ -26,6 +26,10 @@ logs-postgres: ## 📜 Postgres logs...
 	@echo "📜 Postgres logs..."
 	@$(DOCKER) exec -it k8s-toolbox kubectl logs -l app=postgres -n data --tail=100 -f
 
+logs-pgbouncer:  ## 📜 PGBouncer logs...
+	@echo "📜 PGBouncer logs..."
+	@$(DOCKER) exec -it k8s-toolbox kubectl logs -l app=pgbouncer -n data --tail=100 -f
+
 logs-redis: ## 📜 Redis logs...
 	@echo "📜 Redis logs..."
 	@$(DOCKER) exec -it k8s-toolbox kubectl logs -l app=redis -n data --tail=100 -f

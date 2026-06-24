@@ -52,7 +52,7 @@ redis-cli: ## 🔴 Connecting to Redis CLI...
 
 seed-trades: ## 🌱 Spawning temporary uv pod to inject fake trades...
 	@echo "🌱 Spawning temporary uv pod to inject fake trades..."
-	@cat backend/DB/redis-postgres-syncers/test/send_fake_trades.py | \
+	@cat backend/DB/redis-postgres-syncers/test/trades.py | \
 	$(DOCKER) exec -i k8s-toolbox kubectl run trade-seeder --rm -i -n backend \
 		--image=ghcr.io/astral-sh/uv:alpine \
 		--env="REDIS_HOST=redis.data.svc.cluster.local" \
