@@ -10,6 +10,7 @@ import asyncpg
 import os
 import csv
 import sys
+import socket
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
@@ -31,6 +32,8 @@ async def lifespan(app: FastAPI):
             user=postgres_user,
             password=postgres_password,
             database=postgres_db,
+            min_size=1,
+            max_size=3,
         )
         logger.info("Synced with postgres")
     except Exception as e:
@@ -105,6 +108,27 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # Initialize Redis client
 redis_client = AsyncRedis(host=redis_host, port=redis_port_number, db=0)
+
+START_TIME = time.time()
+
+
+@app.get("/probe")
+async def probe():
+    hostname = socket.gethostname()  # In K8s, this defaults to the Pod Name
+
+    return {
+        "status": "ok",
+        # K8s Downward API Info
+        "k8s_node": os.getenv("NODE_NAME", "unknown"),
+        "k8s_namespace": os.getenv("POD_NAMESPACE", "unknown"),
+        "k8s_pod_ip": os.getenv("POD_IP", "unknown"),
+        "k8s_pod_name": hostname,
+        # GitOps Info
+        "environment": os.getenv("ENVIRONMENT", "dev"),
+        # Runtime Info
+        "process_id": os.getpid(),
+        "uptime_seconds": round(time.time() - START_TIME, 2),
+    }
 
 
 @app.middleware("http")
@@ -417,7 +441,7 @@ async def get_users_positions(user_id: str = Depends(verify_cookie)):
                 positions[x_positions["account_id"]].append(
                     {
                         "account_name": real_account["account_name"],
-                        "symbol_ticker": x_positions["ticker"],
+                        "symbol_ticker": x_positions["symbol_ticker"],
                         "quantity": x_positions["quantity"],
                         "created_at": x_positions["created_at"],
                         "updated_at": x_positions["updated_at"],
@@ -604,46 +628,6 @@ async def individual_trade(user_id: str, trade: dict):
         logger.warning("Invalid quantity for booking")
         raise HTTPException(status_code=422, detail="Not a valid quantity value")
 
-    # Grab all positions for editing
-    raw_positions = await redis_client.hgetall(redis_dictionaries[2])
-    position_key = None
-    new_position = None
-
-    positions = {
-        key.decode() if isinstance(key, bytes) else key: json.loads(value)
-        for key, value in raw_positions.items()
-    }  # Turn all positions into valid dictionaries and not bytes
-
-    for key, x in positions.items():
-        if (
-            x["account_id"] == trade["account_id"]
-            and x["symbol_ticker"] == trade["ticker"]
-        ):  # Correct account and ticker
-            position_key = key  # Grab the key of the position to edit
-            if (
-                trade["direction"] == "Sell"
-                and x["quantity"] - trade["quantity"] < 0
-                and not account_data["can_short"]
-            ):  # Check if trying to short
-                logger.warning("Invalid short attempt")
-                raise HTTPException(
-                    status_code=403, detail="You do not have permission to short"
-                )
-            new_position = (
-                x["quantity"] + trade["quantity"]
-                if trade["direction"] == "Buy"
-                else x["quantity"] - trade["quantity"]
-            )  # Save what the new position will be
-
-            break  # only one account and one ticker
-
-    if new_position is None:  # This position does not currently exist
-        if trade["direction"] != "Buy" and not account_data["can_short"]:
-            logger.warning("Invalid short attempt")
-            raise HTTPException(
-                status_code=403, detail="You do not have permission to short"
-            )
-
     other_account = trade.get("other_account")
 
     if other_account:
@@ -655,8 +639,9 @@ async def individual_trade(user_id: str, trade: dict):
         trade["other_account"] = None
 
     trade_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).timestamp()
-    now_int = int(now)
+    now = datetime.now(timezone.utc)
+    now_str = now.isoformat()
+    now_int = int(now.timestamp())
     payload = {
         "trade_id": trade_id,
         "account_id": trade["account_id"],
@@ -673,36 +658,81 @@ async def individual_trade(user_id: str, trade: dict):
     # Pack to raw binary
     packed_bytes = msgpack.packb(payload)
 
-    if position_key is None:  # The position does not exist, create new one
-        new_position = (
-            trade["quantity"] if trade["direction"] == "Buy" else 0 - trade["quantity"]
-        )
-        position_key = str(uuid.uuid4())
-        position_data = {
-            "account_id": trade["account_id"],
-            "symbol_ticker": trade["ticker"],
-            "quantity": new_position,
-            "created_at": now,
-            "updated_at": now,
-        }
-        await redis_client.hset(  # Set the new position
-            redis_dictionaries[2], position_key, json.dumps(position_data)
-        )
-        logger.info("Created new position for account")
-    else:  # Editing existing position
-        # Grab the existing positions data
-        raw_specific_position = await redis_client.hget(
-            redis_dictionaries[2], position_key
-        )
-        specific_position = json.loads(raw_specific_position)
+    lock = redis_client.lock(
+        f"position:{trade['account_id']}:{trade['ticker']}", timeout=5
+    )
 
-        # Edit the existing position data
-        specific_position["quantity"] = new_position
-        specific_position["updated_at"] = now
-        await redis_client.hset(
-            redis_dictionaries[2], position_key, json.dumps(specific_position)
-        )
-        logger.info("Updated existing position for account")
+    async with lock:
+        # Grab all positions for editing
+        raw_positions = await redis_client.hgetall(redis_dictionaries[2])
+        position_key = None
+        new_position = None
+
+        positions = {
+            key.decode() if isinstance(key, bytes) else key: json.loads(value)
+            for key, value in raw_positions.items()
+        }  # Turn all positions into valid dictionaries and not bytes
+
+        for key, x in positions.items():
+            if (
+                x["account_id"] == trade["account_id"]
+                and x["symbol_ticker"] == trade["ticker"]
+            ):  # Correct account and ticker
+                position_key = key  # Grab the key of the position to edit
+                if (
+                    trade["direction"] == "Sell"
+                    and x["quantity"] - trade["quantity"] < 0
+                    and not account_data["can_short"]
+                ):  # Check if trying to short
+                    logger.warning("Invalid short attempt")
+                    raise HTTPException(
+                        status_code=403, detail="You do not have permission to short"
+                    )
+                new_position = (
+                    x["quantity"] + trade["quantity"]
+                    if trade["direction"] == "Buy"
+                    else x["quantity"] - trade["quantity"]
+                )  # Save what the new position will be
+
+                break  # only one account and one ticker
+
+        if new_position is None:  # This position does not currently exist
+            if trade["direction"] != "Buy" and not account_data["can_short"]:
+                logger.warning("Invalid short attempt")
+                raise HTTPException(
+                    status_code=403, detail="You do not have permission to short"
+                )
+            new_position = (
+                trade["quantity"]
+                if trade["direction"] == "Buy"
+                else 0 - trade["quantity"]
+            )
+            position_key = str(uuid.uuid4())
+            position_data = {
+                "account_id": trade["account_id"],
+                "symbol_ticker": trade["ticker"],
+                "quantity": new_position,
+                "created_at": now_str,
+                "updated_at": now_str,
+            }
+            await redis_client.hset(  # Set the new position
+                redis_dictionaries[2], position_key, json.dumps(position_data)
+            )
+            logger.info("Created new position for account")
+        else:  # Editing existing position
+            # Grab the existing positions data
+            raw_specific_position = await redis_client.hget(
+                redis_dictionaries[2], position_key
+            )
+            specific_position = json.loads(raw_specific_position)
+
+            # Edit the existing position data
+            specific_position["quantity"] = new_position
+            specific_position["updated_at"] = now_str
+            await redis_client.hset(
+                redis_dictionaries[2], position_key, json.dumps(specific_position)
+            )
+            logger.info("Updated existing position for account")
 
     # High Efficiency: Save to a single field named "d"
     await redis_client.xadd(TRADE_STREAM, {"d": packed_bytes})

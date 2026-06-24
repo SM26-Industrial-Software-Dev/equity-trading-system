@@ -20,3 +20,14 @@ patches:
             server:
               global:
                 scrape_interval: 15s
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: fastapi-hpa
+    patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: fastapi-hpa
+      spec:
+        maxReplicas: 6 # Max's custom pod limit
+        # minReplicas: 1 # He can also override the minimum here if he wants!
