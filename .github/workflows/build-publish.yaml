@@ -48,8 +48,8 @@ jobs:
 
       - name: Log in to the Container registry
         if: |
-          github.event_name != 'pull_request' && 
-          github.repository == 'YOUR_ORGANIZATION_NAME/equity-trading-system'
+          github.event_name != 'pull_request' &&
+          github.repository == 'SM26-Industrial-Software-Dev/equity-trading-system'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
