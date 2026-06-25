@@ -93,7 +93,10 @@ if [ ! -d "$PROJECT_ROOT/k8s" ]; then
 fi
 
 cd "$PROJECT_ROOT/k8s"
-echo "DOCKER_HOST_PATH=$ACTUAL_SOCK" >.env
+cat > .env <<EOF
+DOCKER_HOST_PATH=$ACTUAL_SOCK
+HOST_ROOT=$PROJECT_ROOT
+EOF
 
 # ============================================================
 # Fix permissions
