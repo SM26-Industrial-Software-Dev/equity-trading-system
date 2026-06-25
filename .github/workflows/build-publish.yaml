@@ -67,6 +67,14 @@ jobs:
             type=raw,value=latest-amd64,enable={{is_default_branch}}
             type=sha,prefix=sha-,suffix=-amd64,format=short
 
+      - name: Debug Variables
+        run: |
+          echo "Full Repository Path: ${{ github.repository }}"
+          echo "Component: ${{ matrix.component }}"
+          BASE_IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/${{ matrix.component }}"
+          echo "Constructed Path: $BASE_IMG"
+          echo "Lowercase Path: $(echo $BASE_IMG | tr '[:upper:]' '[:lower:]')"
+
       - name: Build and push AMD64
         uses: docker/build-push-action@v5
         with:
