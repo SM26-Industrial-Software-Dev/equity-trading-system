@@ -20,5 +20,5 @@ spec:
   sourceRef:
     kind: GitRepository
     name: main-repo
-  path: ./backend/k8s/manifests/overlays/upstream # Points to Upstream overlay!
+  path: ./k8s/manifests/overlays/upstream # Points to Upstream overlay!
   prune: true
