@@ -6,11 +6,10 @@ pool = ConnectionPool(
     host=redis_host,
     port=redis_port_number,
     db=0,
-    max_connections=computed_max_connections,
-    decode_responses=True,
+    max_connections=computed_max_connections
 )
 
-redis_client = Redis(ConnectionPool=pool)
+redis_client = Redis(connection_pool=pool)
 
 redis_dictionaries = [
     "users",
