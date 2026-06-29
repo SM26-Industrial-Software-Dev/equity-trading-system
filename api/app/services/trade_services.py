@@ -87,7 +87,9 @@ async def individual_trade(user_id: str, trade: dict):
     packed_bytes = msgpack.packb(payload)
 
     lock = redis_client.lock(
-        f"position:{trade['account_id']}:{trade['ticker']}", timeout=30
+        f"position:{trade['account_id']}:{trade['ticker']}",
+        timeout=30,
+        blocking_timeout=5,
     )
 
     async with lock:
