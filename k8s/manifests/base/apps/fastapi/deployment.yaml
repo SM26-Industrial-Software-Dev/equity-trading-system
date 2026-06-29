@@ -53,7 +53,7 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
             - name: ENVIRONMENT
-              value: "base"
+              value: "Production"
 
             - name: REDIS_MAX_PODS
               value: "20"
