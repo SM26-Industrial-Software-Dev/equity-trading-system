@@ -148,7 +148,9 @@ async def get_all_accounts_positions(account_id: str, user_id: str):
         symbol_market_data[ticker] = json.loads(value)
 
     for x_positions in real_positions:
-        market = x_positions["symbol_ticker"]
+        market = symbol_market_data.get(x_positions["symbol_ticker"])
+        if not market:
+            continue
         positions[x_positions["symbol_ticker"]] = {
             "quantity": x_positions["quantity"],
             "latest_price": market["latest_price"],
