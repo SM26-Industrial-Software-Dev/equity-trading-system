@@ -30,7 +30,7 @@ ENV CC_x86_64_unknown_linux_musl=musl-gcc
 # --- for arm64 cross-compilation ---
 FROM builder-base AS builder-arm64
 ENV RUST_TARGET=aarch64-unknown-linux-musl
-RUN wget -q https://musl.cc/aarch64-linux-musl-cross.tgz && \
+RUN wget -v https://musl.cc/aarch64-linux-musl-cross.tgz && \
     tar -xzf aarch64-linux-musl-cross.tgz -C /usr/local && \
     rm aarch64-linux-musl-cross.tgz
 ENV PATH="/usr/local/aarch64-linux-musl-cross/bin:${PATH}"
