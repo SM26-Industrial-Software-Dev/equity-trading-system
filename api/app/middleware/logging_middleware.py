@@ -4,6 +4,7 @@ from redis.exceptions import RedisError
 import time
 import asyncpg
 from app.core.logging import logger
+from app.core.redis import pool
 
 
 async def logging_middleware(request: Request, call_next):
@@ -19,6 +20,8 @@ async def logging_middleware(request: Request, call_next):
             f"-> {response.status_code} "
             f"in {duration_ms:.2f}ms"
         )
+
+        #logger.info(f"Available connections: {len(pool._available_connections)}, In use: {len(pool._in_use_connections)}")
 
         if response.status_code >= 500:
             logger.error(message)
