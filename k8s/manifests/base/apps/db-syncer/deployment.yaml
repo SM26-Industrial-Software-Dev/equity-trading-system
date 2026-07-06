@@ -32,6 +32,13 @@ spec:
         - name: db-syncer
           image: db-syncer-image
           imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "32Mi"
+            limits:
+              cpu: "150m"
+              memory: "128Mi"
           env:
             - name: POSTGRES_USER
               valueFrom:

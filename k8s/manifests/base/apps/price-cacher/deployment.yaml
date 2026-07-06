@@ -30,6 +30,13 @@ spec:
         - name: price-cacher
           image: price-cacher-image
           imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "64Mi"
+            limits:
+              cpu: "75m"
+              memory: "256Mi"
           env:
             - name: REDIS_URL
               valueFrom:
