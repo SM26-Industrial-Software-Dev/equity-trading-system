@@ -13,11 +13,12 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  CANONICAL_REPO: SM26-Industrial-Software-Dev/equity-trading-system
 
 jobs:
   # Build the two Python images
   build-simple:
-    name: Build (${{ matrix.component }})
+    name: Build ${{ matrix.component }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -32,13 +33,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - name: Set lowercased owner
-        id: vars
-        run: |
-          echo "OWNER_LOWER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
-          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.component }}
+          tags: type=raw,value=latest
       - name: Log in to registry
-        if: github.event_name != 'pull_request' && github.repository == 'SM26-Industrial-Software-Dev/equity-trading-system'
+        if: github.event_name != 'pull_request' && github.repository == env.CANONICAL_REPO
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -50,8 +52,9 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' && github.repository == 'SM26-Industrial-Software-Dev/equity-trading-system' }}
-          tags: ${{ env.REGISTRY }}/${{ steps.vars.outputs.OWNER_LOWER }}/${{ matrix.component }}:latest
+          push: ${{ github.event_name != 'pull_request' && github.repository == env.CANONICAL_REPO }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
 
@@ -74,30 +77,28 @@ jobs:
           cache-to: type=gha,mode=max,scope=syncers-deps
 
   # Build Rust workers using pre-build deps cache
-  build-syncers:
-    name: Build (${{ matrix.component }})
+  build-workers:
+    name: Build ${{ matrix.component }}
     needs: prepare-deps
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - component: trade-writer
-            build_args: BIN_NAME=trade-writer
-          - component: db-syncer
-            build_args: BIN_NAME=db-syncer
-          - component: price-cacher
-            build_args: BIN_NAME=price-cacher
+        component: [trade-writer, db-syncer, price-cacher]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - name: Set lowercased owner
+      - name: Compute short SHA
         id: vars
-        run: |
-          echo "OWNER_LOWER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
-          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.component }}
+          tags: type=raw,value=latest
       - name: Log in to registry
-        if: github.event_name != 'pull_request' && github.repository == 'SM26-Industrial-Software-Dev/equity-trading-system'
+        if: github.event_name != 'pull_request' && github.repository == env.CANONICAL_REPO
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -110,11 +111,12 @@ jobs:
           file: db/redis-postgres-syncers/Containerfile
           platforms: linux/amd64,linux/arm64
           build-args: |
-            ${{ matrix.build_args }}
+            BIN_NAME=${{ matrix.component }}
             BUILD_SOURCE=github-actions
             BUILD_GIT_HASH=${{ steps.vars.outputs.SHORT_SHA }}
-          push: ${{ github.event_name != 'pull_request' && github.repository == 'SM26-Industrial-Software-Dev/equity-trading-system' }}
-          tags: ${{ env.REGISTRY }}/${{ steps.vars.outputs.OWNER_LOWER }}/${{ matrix.component }}:latest
+          push: ${{ github.event_name != 'pull_request' && github.repository == env.CANONICAL_REPO }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: |
             type=gha,scope=syncers-deps
             type=gha,scope=${{ matrix.component }}
