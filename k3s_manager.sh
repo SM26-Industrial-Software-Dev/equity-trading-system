@@ -237,6 +237,8 @@ setup_db_secrets() {
         echo "Applying secret to namespace: $NS"
         kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
         kubectl create secret generic db-credentials \
+            --from-literal=username=trade_admin \
+            --from-literal=password="$PG_PASS" \
             --from-literal=POSTGRES_USER=trade_admin \
             --from-literal=POSTGRES_PASSWORD="$PG_PASS" \
             --namespace="$NS" \

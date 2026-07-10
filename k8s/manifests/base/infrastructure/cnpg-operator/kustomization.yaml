@@ -1,8 +1,9 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+namespace: data
+
 resources:
-  - ../namespaces.yaml
-  - monitoring
-  - keda
-  - cnpg-operator
+  - helm-repo.yaml
+  - helm-release.yaml
