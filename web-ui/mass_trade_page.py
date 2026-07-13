@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-
 from api_client import submit_trades
 from account_picker import get_account_options
 
@@ -110,14 +109,13 @@ def _parse_input(raw_text: str) -> list[dict]:
 
 
 def _render_preview_grid(rows: list[dict]):
-    from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
-
     """Renders parsed trades as an AgGrid with green/red row coloring
     based on validity."""
     df = pd.DataFrame(rows)
 
     # Drop internal columns before display
     display_df = df.drop(columns=["_valid", "_account_id"])
+    from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 
     gb = GridOptionsBuilder.from_dataframe(display_df)
     gb.configure_default_column(sortable=True, resizable=True)

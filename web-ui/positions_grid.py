@@ -76,6 +76,7 @@ def render_positions_grid(rows, empty_message="No positions found.", key="positi
     if not rows:
         st.info(empty_message)
         return
+
     from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
     df = pd.DataFrame(rows)
