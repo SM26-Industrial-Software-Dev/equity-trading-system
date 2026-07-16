@@ -146,6 +146,55 @@ def _render_preview_grid(rows: list[dict]):
         key="mass_trade_preview_grid",
     )
 
+    first_load_key = "mass_trade_preview_grid_initialized"
+    if not st.session_state.get(first_load_key):
+        st.session_state[first_load_key] = True
+        st.rerun()
+
+
+def _submit_chunk_with_cookie(chunk, cookie):
+    session = requests.Session()
+    if cookie:
+        session.cookies.set("session", cookie)
+    try:
+        response = session.post(f"{API_BASE_URL}/trade", json=chunk)
+    except Exception:
+        return {"status": "error", "message": "Could not reach the backend."}
+    if response.status_code == 200:
+        return {"status": "success", "data": response.json()}
+    return {"status": "error", "message": response.text}
+
+
+BATCH_SIZE = 25
+
+
+def _submit_in_batches(payload):
+    cookie = st.session_state.get("saved_session_cookie")
+
+    chunks = []
+    for i in range(0, len(payload), BATCH_SIZE):
+        chunks.append(payload[i:i + BATCH_SIZE])
+
+    all_successes = []
+    all_failures = []
+    errors = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(_submit_chunk_with_cookie, chunk, cookie) for chunk in chunks]
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result["status"] == "success":
+                data = result["data"]
+                all_successes.extend(data.get("successes", []))
+                all_failures.extend(data.get("failures", []))
+            else:
+                errors.append(result["message"])
+
+    if errors and not all_successes and not all_failures:
+        return {"status": "error", "message": "; ".join(errors)}
+
+    return {"status": "success", "data": {"successes": all_successes, "failures": all_failures}}
+
 
 def _submit_chunk_with_cookie(chunk, cookie):
     session = requests.Session()
@@ -243,7 +292,7 @@ def _render_success_state():
 
 
 def render_mass_trade_page():
-    st.header("📋 Mass Trade Booker")
+    st.header("📋 Mass Trade Booker", anchor=False)
 
     # Once a batch has been submitted, show only the success state above
     # (with "Book More Trades" up top) until the user explicitly starts a
@@ -300,7 +349,8 @@ def render_mass_trade_page():
 
     st.divider()
     st.subheader(
-        f"Preview — {len(rows)} trades ({len(valid_rows)} valid, {len(invalid_rows)} invalid)"
+        f"Preview — {len(rows)} trades ({len(valid_rows)} valid, {len(invalid_rows)} invalid)",
+        anchor=False
     )
 
     _render_preview_grid(rows)
