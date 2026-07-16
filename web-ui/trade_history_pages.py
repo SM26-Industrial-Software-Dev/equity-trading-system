@@ -72,9 +72,9 @@ def render_all_trades_page():
     col1, col2 = st.columns(2)
     prefilled = st.session_state.pop("jump_to_trades_account", None)
     with col1:
-        account_id = account_select(label="Account (optional)", key="trades_page_filter_account", preselect_account_id=prefilled)
+        account_id = account_select(label="Account", key="trades_page_filter_account", preselect_account_id=prefilled)
     with col2:
-        ticker = st.text_input("Ticker (optional)", key="trades_page_filter_ticker").strip().upper() or None
+        ticker = st.text_input("Ticker", key="trades_page_filter_ticker").strip().upper() or None
     col3, col4 = st.columns(2)
     with col3:
         date_from = st.date_input("From", value=datetime.date.today() - datetime.timedelta(days=30),
